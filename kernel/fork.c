@@ -123,11 +123,6 @@
  */
 #define MAX_THREADS FUTEX_TID_MASK
 
-
-
-extern void track_syscall(int syscall_id);
-
-
 /*
  * Protected counters by write_lock_irq(&tasklist_lock)
  */

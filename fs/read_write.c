@@ -25,6 +25,8 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
+extern void track_syscall(int syscall_id);
+
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -607,6 +609,7 @@ static inline loff_t *file_ppos(struct file *file)
 
 ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 {
+    track_syscall(__NR_read);
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 
@@ -631,6 +634,7 @@ SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 
 ssize_t ksys_write(unsigned int fd, const char __user *buf, size_t count)
 {
+    track_syscall(__NR_write);
 	struct fd f = fdget_pos(fd);
 	ssize_t ret = -EBADF;
 

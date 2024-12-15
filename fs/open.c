@@ -37,6 +37,8 @@
 
 #include "internal.h"
 
+extern void track_syscall(int syscall_id);
+
 int do_truncate(struct mnt_idmap *idmap, struct dentry *dentry,
 		loff_t length, unsigned int time_attrs, struct file *filp)
 {
@@ -1388,6 +1390,7 @@ EXPORT_SYMBOL(file_open_root);
 static long do_sys_openat2(int dfd, const char __user *filename,
 			   struct open_how *how)
 {
+    track_syscall(__NR_open);
 	struct open_flags op;
 	int fd = build_open_flags(how, &op);
 	struct filename *tmp;

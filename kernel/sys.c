@@ -958,11 +958,13 @@ static void get_memory_info(struct memory_info *mem_info) {
     unsigned long buffered_pages = global_zone_page_state(NR_FILE_DIRTY);
     
     struct sysinfo info;
-    si_swapinfo(&info);
+    si_swapinfo(&info);  // Llamamos a si_swapinfo para llenar la estructura sysinfo
 
+    // Usamos la información swap desde la estructura sysinfo
     unsigned long swap_total = info.totalswap;
     unsigned long swap_free = info.freeswap;
 
+    // Asignar los valores a la estructura de memoria personalizada
     mem_info->total_memory = total_pages * PAGE_SIZE;
     mem_info->free_memory = free_pages * PAGE_SIZE;
     mem_info->used_memory = (total_pages - free_pages) * PAGE_SIZE;
@@ -1053,6 +1055,49 @@ SYSCALL_DEFINE1(track_syscall_usage, struct syscall_usage __user*, statistics) {
 
 /*
 ==================== SYSCALL 2 =========================
+*/
+
+/*
+==================== SYSCALL 3 =========================
+*/
+
+
+struct io_stats {
+    unsigned long long bytes_read;
+    unsigned long long bytes_written;
+    unsigned long long bytes_read_disk;
+    unsigned long long bytes_written_disk;
+    unsigned long long io_wait_time; // Será 0 si no se implementa
+};
+
+SYSCALL_DEFINE2(get_io_throttle, pid_t, pid, struct io_stats __user *, stats) {
+    struct task_struct *task;
+    struct io_stats io_data;
+
+    rcu_read_lock();
+    task = pid_task(find_vpid(pid), PIDTYPE_PID);
+    if (!task) {
+        rcu_read_unlock();
+        return -ESRCH; // Proceso no encontrado
+    }
+
+    io_data.bytes_read = task->ioac.read_bytes;
+    io_data.bytes_written = task->ioac.write_bytes;
+    io_data.bytes_read_disk = task->ioac.cancelled_write_bytes; 
+    io_data.bytes_written_disk = task->ioac.write_bytes; 
+    io_data.io_wait_time = 0; 
+
+    rcu_read_unlock();
+
+    if (copy_to_user(stats, &io_data, sizeof(struct io_stats)))
+        return -EFAULT;
+
+    return 0;
+}
+
+
+/*
+==================== SYSCALL 3 =========================
 */
 
 SYSCALL_DEFINE1(setfsgid, gid_t, gid)

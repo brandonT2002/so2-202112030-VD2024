@@ -95,6 +95,7 @@ struct mnt_id_req;
 asmlinkage long saludo(void);
 asmlinkage long capture_memory_snapshot(void);
 void track_syscall(int syscall_id);
+asmlinkage long get_io_throttle(void);
 
 #ifdef CONFIG_ARCH_HAS_SYSCALL_WRAPPER
 /*
