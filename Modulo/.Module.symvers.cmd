@@ -1,0 +1,1 @@
+savedcmd_/home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/Module.symvers -T /home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/modules.order -i Module.symvers -e 

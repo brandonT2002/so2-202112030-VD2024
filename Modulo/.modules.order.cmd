@@ -1,0 +1,1 @@
+savedcmd_/home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/modules.order := {   echo /home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/main.o; :; } > /home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/modules.order

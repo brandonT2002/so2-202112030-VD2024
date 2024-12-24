@@ -1,0 +1,1 @@
+savedcmd_/home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/main.mod := printf '%s\n'   main.o | awk '!x[$$0]++ { print("/home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/"$$0) }' > /home/jefferson/Escritorio/so2-202112030-VD2024/Modulo/main.mod
