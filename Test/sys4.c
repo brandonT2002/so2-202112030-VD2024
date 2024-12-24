@@ -3,26 +3,39 @@
 #include <sys/syscall.h>
 #include <errno.h>
 
-// Definir el número de la syscall (551 en tu caso)
 #define JEFF_TAMALLOC_SYSCALL 551
 
+void print_table_header() {
+    printf("╔════════════════════════════════════════════════════════════╗\n");
+    printf("║                Información de la Memoria Reservada         ║\n");
+    printf("╠════════════════════╦═══════════════════════════════════════╣\n");
+    printf("║ Dirección          ║ Tamaño Reservado (bytes)              ║\n");
+    printf("╠════════════════════╬═══════════════════════════════════════╣\n");
+}
+
+void print_table_row(void *addr, size_t size) {
+    printf("║ %-18p ║ %-37zu ║\n", addr, size);
+}
+
+void print_table_footer() {
+    printf("╚════════════════════╩═══════════════════════════════════════╝\n");
+}
+
 int main() {
-    size_t size = 4096; // Tamaño de memoria a reservar (por ejemplo, 4 KB)
+    size_t size = 4096;
     void *addr;
 
-    // Invocar la syscall jeff_tamalloc
     addr = (void *)syscall(JEFF_TAMALLOC_SYSCALL, size);
 
-    // Verificar si hubo error
     if ((long)addr < 0) {
         perror("Error al llamar a jeff_tamalloc");
         return 1;
     }
 
-    // Imprimir dirección de memoria reservada
-    printf("Memoria reservada en la dirección: %p\n", addr);
+    print_table_header();
+    print_table_row(addr, size);
+    print_table_footer();
 
-    // Nota: El programa no usa `munmap` aquí porque la memoria asignada es anónima.
     return 0;
 }
 
