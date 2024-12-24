@@ -958,11 +958,13 @@ static void get_memory_info(struct memory_info *mem_info) {
     unsigned long buffered_pages = global_zone_page_state(NR_FILE_DIRTY);
     
     struct sysinfo info;
-    si_swapinfo(&info);
+    si_swapinfo(&info);  // Llamamos a si_swapinfo para llenar la estructura sysinfo
 
+    // Usamos la información swap desde la estructura sysinfo
     unsigned long swap_total = info.totalswap;
     unsigned long swap_free = info.freeswap;
 
+    // Asignar los valores a la estructura de memoria personalizada
     mem_info->total_memory = total_pages * PAGE_SIZE;
     mem_info->free_memory = free_pages * PAGE_SIZE;
     mem_info->used_memory = (total_pages - free_pages) * PAGE_SIZE;
@@ -977,10 +979,16 @@ static void get_memory_info(struct memory_info *mem_info) {
 SYSCALL_DEFINE1(capture_memory_snapshot, struct memory_info __user *, mem_info) {
     struct memory_info kernel_mem_info;
 
+    pr_info("Capture Memory Snapshot: Starting...\n");
+
     get_memory_info(&kernel_mem_info);
+
+    pr_info("Capture Memory Snapshot: Info gathered\n");
 
     if (copy_to_user(mem_info, &kernel_mem_info, sizeof(struct memory_info)))
         return -EFAULT;
+
+    pr_info("Capture Memory Snapshot: Successfully copied to user space\n");
 
     return 0;
 }
@@ -1053,49 +1061,85 @@ SYSCALL_DEFINE1(track_syscall_usage, struct syscall_usage __user*, statistics) {
 ==================== SYSCALL 3 =========================
 */
 
-#define MAX_PROCESSES 1024 
 
 struct io_stats {
     unsigned long long bytes_read;
     unsigned long long bytes_written;
     unsigned long long bytes_read_disk;
     unsigned long long bytes_written_disk;
-    unsigned long long io_wait_time;
+    unsigned long long io_wait_time; // Será 0 si no se implementa
 };
 
 SYSCALL_DEFINE2(get_io_throttle, pid_t, pid, struct io_stats __user *, stats) {
     struct task_struct *task;
     struct io_stats io_data;
 
-    if (!stats) {
-        return -EINVAL; 
-    }
-
     rcu_read_lock();
     task = pid_task(find_vpid(pid), PIDTYPE_PID);
     if (!task) {
         rcu_read_unlock();
-        return -ESRCH; 
+        return -ESRCH; // Proceso no encontrado
     }
 
-    memset(&io_data, 0, sizeof(io_data));
     io_data.bytes_read = task->ioac.read_bytes;
     io_data.bytes_written = task->ioac.write_bytes;
-    io_data.bytes_read_disk = task->ioac.cancelled_write_bytes;
-    io_data.bytes_written_disk = task->ioac.write_bytes;
-    io_data.io_wait_time = 0; // No se logra arreglar
+    io_data.bytes_read_disk = task->ioac.cancelled_write_bytes; 
+    io_data.bytes_written_disk = task->ioac.write_bytes; 
+    io_data.io_wait_time = 0; 
 
     rcu_read_unlock();
 
-    if (copy_to_user(stats, &io_data, sizeof(struct io_stats))) {
-        return -EFAULT; 
-    }
+    if (copy_to_user(stats, &io_data, sizeof(struct io_stats)))
+        return -EFAULT;
 
-    return 0; 
+    return 0;
 }
+
 
 /*
 ==================== SYSCALL 3 =========================
+*/
+
+/*
+==================== SYSCALL 4 =========================
+*/
+
+static inline int validate_size(size_t size) {
+    if (size == 0 || size > TASK_SIZE) {
+        return -EINVAL;
+    }
+    return 0;
+}
+
+static inline unsigned long reserve_memory(size_t size) {
+    unsigned long populate = 0;
+    vm_flags_t vm_flags = 0;
+    unsigned long pgoff = 0;
+    struct list_head *uf = NULL;
+
+    return do_mmap(NULL, 0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, vm_flags, pgoff, &populate, uf);
+}
+
+SYSCALL_DEFINE1(jeff_tamalloc, size_t, size) {
+    int validation_result;
+    unsigned long addr;
+
+    validation_result = validate_size(size);
+    if (validation_result < 0) {
+        return validation_result;
+    }
+
+    addr = reserve_memory(size);
+    if (IS_ERR_VALUE(addr)) {
+        return addr;
+    }
+
+    return addr;
+}
+
+
+/*
+==================== SYSCALL 4 =========================
 */
 
 SYSCALL_DEFINE1(setfsgid, gid_t, gid)
