@@ -1190,6 +1190,45 @@ SYSCALL_DEFINE2(jeff_process_memory, pid_t, pid, struct process_memory_stats __u
 ==================== SYSCALL 5 =========================
 */
 
+/*
+==================== SYSCALL 6 =========================
+*/
+
+struct total_memory_stats {
+    unsigned long total_reserved_mb;
+    unsigned long total_committed_mb;
+};
+
+SYSCALL_DEFINE1(jeff_total_memory, struct total_memory_stats __user *, stats) {
+    struct task_struct *task;
+    struct total_memory_stats local_stats = {0};
+    unsigned long total_reserved_kb = 0;
+    unsigned long total_committed_kb = 0;
+
+    rcu_read_lock();
+    for_each_process(task) {
+        if (!task->mm)
+            continue;
+
+        total_reserved_kb += (task->mm->total_vm << (PAGE_SHIFT - 10));
+        total_committed_kb += (task->mm->hiwater_vm << (PAGE_SHIFT - 10));
+    }
+    rcu_read_unlock();
+
+    local_stats.total_reserved_mb = total_reserved_kb / 1024;
+    local_stats.total_committed_mb = total_committed_kb / 1024;
+
+    if (copy_to_user(stats, &local_stats, sizeof(local_stats))) {
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+/*
+==================== SYSCALL 6 =========================
+*/
+
 SYSCALL_DEFINE1(setfsgid, gid_t, gid)
 {
 	return __sys_setfsgid(gid);

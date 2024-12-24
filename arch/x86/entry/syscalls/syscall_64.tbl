@@ -434,3 +434,4 @@
 550 common get_io_throttle         sys_get_io_throttle
 551 common jeff_tamalloc           sys_jeff_tamalloc
 552 common jeff_process_memory     sys_jeff_process_memory
+553 common jeff_total_memory       sys_jeff_total_memory
