@@ -1142,6 +1142,54 @@ SYSCALL_DEFINE1(jeff_tamalloc, size_t, size) {
 ==================== SYSCALL 4 =========================
 */
 
+/*
+==================== SYSCALL 5 =========================
+*/
+
+struct process_memory_stats {
+    pid_t pid;
+    unsigned long reserved_kb;
+    unsigned long committed_kb;
+    unsigned long committed_pct;
+    int oom_score;
+};
+
+SYSCALL_DEFINE2(jeff_process_memory, pid_t, pid, struct process_memory_stats __user *, stats) {
+    struct task_struct *task;
+    struct process_memory_stats local_stats;
+    unsigned long reserved_kb = 0;
+    unsigned long committed_kb = 0;
+
+    rcu_read_lock();
+    task = pid_task(find_vpid(pid), PIDTYPE_PID);
+    if (!task) {
+        rcu_read_unlock();
+        return -ESRCH;
+    }
+
+    reserved_kb = (task->mm->total_vm << (PAGE_SHIFT - 10));
+    committed_kb = (task->mm->hiwater_vm << (PAGE_SHIFT - 10));
+
+    local_stats.pid = pid;
+    local_stats.reserved_kb = reserved_kb;
+    local_stats.committed_kb = committed_kb;
+    local_stats.committed_pct = reserved_kb ? (committed_kb * 100 / reserved_kb) : 0;
+    local_stats.oom_score = task->signal->oom_score_adj;
+
+    rcu_read_unlock();
+
+    if (copy_to_user(stats, &local_stats, sizeof(local_stats))) {
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+
+/*
+==================== SYSCALL 5 =========================
+*/
+
 SYSCALL_DEFINE1(setfsgid, gid_t, gid)
 {
 	return __sys_setfsgid(gid);

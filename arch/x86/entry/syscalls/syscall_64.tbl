@@ -433,3 +433,4 @@
 549 common track_syscall_usage     sys_track_syscall_usage
 550 common get_io_throttle         sys_get_io_throttle
 551 common jeff_tamalloc           sys_jeff_tamalloc
+552 common jeff_process_memory     sys_jeff_process_memory
