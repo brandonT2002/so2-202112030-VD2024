@@ -24,6 +24,10 @@ Desarrollar un asignador de memoria capaz de inicializar la memoria en cero u ot
 tamalloc utiliza el enfoque de lazy-zeroing para inicializar páginas de memoria en cero de forma diferida. Primero, valida el tamaño solicitado y reserva el espacio virtual necesario sin asignar páginas físicas de inmediato, utilizando banderas como MAP_NORESERVE. Las páginas son inicializadas únicamente al primer acceso, cuando un page fault activa su asignación y escritura en cero, optimizando el uso de recursos del sistema.
 
 ```c
+
+```
+
+```c
 static inline int validate_size(size_t size) {
     if (size == 0 || size > TASK_SIZE) {
         return -EINVAL;

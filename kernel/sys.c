@@ -1146,45 +1146,42 @@ SYSCALL_DEFINE1(jeff_tamalloc, size_t, size) {
 ==================== SYSCALL 5 =========================
 */
 
-struct process_memory_stats {
-    pid_t pid;
+struct mem_stats {
     unsigned long reserved_kb;
     unsigned long committed_kb;
-    unsigned long committed_pct;
-    int oom_score;
+    unsigned long oom_score;
+    unsigned long porcentage; 
 };
 
-SYSCALL_DEFINE2(jeff_process_memory, pid_t, pid, struct process_memory_stats __user *, stats) {
+SYSCALL_DEFINE2(jeff_process_memory, pid_t, pid, struct mem_stats __user *, user_stats)
+{
     struct task_struct *task;
-    struct process_memory_stats local_stats;
-    unsigned long reserved_kb = 0;
-    unsigned long committed_kb = 0;
+    struct mem_stats stats = {0};
 
-    rcu_read_lock();
-    task = pid_task(find_vpid(pid), PIDTYPE_PID);
-    if (!task) {
-        rcu_read_unlock();
-        return -ESRCH;
+    task = get_pid_task(find_get_pid(pid), PIDTYPE_PID);
+    if (!task)
+        return -ESRCH; 
+
+    if (!task->mm)
+        return -EINVAL; 
+
+    stats.reserved_kb = task->mm->total_vm * PAGE_SIZE / 1024;
+    stats.committed_kb =  get_mm_rss(task->mm) * PAGE_SIZE / 1024;
+
+    if (get_mm_rss(task->mm) == 0) {
+        stats.porcentage = 0; 
+    } else {
+        stats.porcentage = (stats.committed_kb * 100) / stats.reserved_kb; 
     }
 
-    reserved_kb = (task->mm->total_vm << (PAGE_SHIFT - 10));
-    committed_kb = (task->mm->hiwater_vm << (PAGE_SHIFT - 10));
+    stats.oom_score = task->signal->oom_score_adj; 
 
-    local_stats.pid = pid;
-    local_stats.reserved_kb = reserved_kb;
-    local_stats.committed_kb = committed_kb;
-    local_stats.committed_pct = reserved_kb ? (committed_kb * 100 / reserved_kb) : 0;
-    local_stats.oom_score = task->signal->oom_score_adj;
-
-    rcu_read_unlock();
-
-    if (copy_to_user(stats, &local_stats, sizeof(local_stats))) {
+    // Copia los resultados al espacio de usuario
+    if (copy_to_user(user_stats, &stats, sizeof(stats)))
         return -EFAULT;
-    }
 
-    return 0;
+    return 0;  
 }
-
 
 /*
 ==================== SYSCALL 5 =========================
