@@ -28,7 +28,8 @@ int main(int argc, char *argv[]) {
     pid_t pid = atoi(argv[1]);
     struct mem_stats stats;
 
-    while (1) {
+    while (1) { // Infinite loop
+        // Make the syscall
         long ret = syscall(__NR_jeff_process_memory, pid, &stats);
 
         if (ret < 0) {
@@ -104,14 +105,15 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        system("clear");
+        // Clear the screen (using ANSI escape sequence)
+        system("clear"); // or system("cls") for Windows
 
         print_process_table_header();
         printf("║ %-10d ║ %-13lu KB ║ %-13lu KB ║ %-19lu%% ║ %-10lu ║\n",
                 pid, stats.reserved_kb, stats.committed_kb, stats.porcentage, stats.oom_score);
         printf("╚════════════╩══════════════════╩══════════════════╩══════════════════════╩════════════╝\n");
 
-        sleep(1);
+        sleep(1); // Sleep for 1 second before updating
     }
 
     return 0;
